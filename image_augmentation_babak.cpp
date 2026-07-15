@@ -60,75 +60,54 @@ int main() {
 
             // 1 save original image
             imwrite(outputPath + "/" + fileName + "_original.png", image);
-
+            
             // 2 horizontally flip image
             Mat flipped;
             flip(image, flipped, 1);  // 1 for horizontal flip (0 = vertical, -1 both)
             imwrite(outputPath + "/" + fileName + "_flip.png", flipped);
-
+            
             // 3 rotate image
             Mat rotated;
-            Point2f center(image.cols / 2.0, image.rows / 2.0);  // calculate center, the image should rotate around
-            Mat rotationMatrix = getRotationMatrix2D(center, 15, 1.0);  // create rotation matrix that rotates by 15 degrees with scale = 1
-            warpAffine(image, rotated, rotationMatrix, image.size(), INTER_LINEAR, BORDER_REFLECT_101);  // apply rotation; INTER_LINEAR = normal interpolation, BORDER_REFLECT_101 = missing areas are filld by mirroring the image to avoid black borders
+            Point2f center(image.cols / 2.0, image.rows / 2.0);  // calculate center the image should rotate around
+            Mat rotationMatrix = getRotationMatrix2D(center, 15, 1.0);  // rotate by 15 degrees with scale = 1
+            warpAffine(image, rotated, rotationMatrix, image.size(), INTER_LINEAR, BORDER_REFLECT_101);
             imwrite(outputPath + "/" + fileName + "_rotate.png", rotated);
-
+            
             // 4 vertically flip image
             Mat flipped2;
-            flip(image, flipped2, 0);
-
-            imwrite(
-                outputPath + "/" + fileName + "_flip2.png",
-                flipped2
-            );
-
-            // 5 vertically flip image + crop image
-            {
-                int left = static_cast<int>(flipped2.cols * 0.1);
-                int top = static_cast<int>(flipped2.rows * 0.1);
-                int width = static_cast<int>(flipped2.cols * 0.8);
-                int height = static_cast<int>(flipped2.rows * 0.8);
-
-                Rect cropArea(left, top, width, height);
-                Mat cropped = flipped2(cropArea);
-
-                Mat croppedResized;
-                resize(cropped, croppedResized, flipped2.size());
-
-                imwrite(
-                    outputPath + "/" + fileName + "_flip2_crop.png",
-                    croppedResized
-                );
-            }
-
+            flip(image, flipped2, 0);  // 0 for vertical flip
+            imwrite(outputPath + "/" + fileName + "_flip2.png", flipped2);
+            
+            // 5 vertically flip and crop image
+            int flippedLeft = flipped2.cols * 0.1;  // 10% from the left
+            int flippedTop = flipped2.rows * 0.1;  // 10% from the top
+            int flippedWidth = flipped2.cols * 0.8;  // keep 80% of the width
+            int flippedHeight = flipped2.rows * 0.8;  // keep 80% of the height
+            
+            Rect flippedCropArea(flippedLeft, flippedTop, flippedWidth, flippedHeight);
+            Mat flippedCropped = flipped2(flippedCropArea);
+            
+            Mat flippedCroppedResized;
+            resize(flippedCropped, flippedCroppedResized, flipped2.size());
+            imwrite(outputPath + "/" + fileName + "_flip2_crop.png", flippedCroppedResized);
+            
             // 6 blur image
             Mat blurred;
-            GaussianBlur(image, blurred, Size(5, 5), 0);
-
-            imwrite(
-                outputPath + "/" + fileName + "_blur.png",
-                blurred
-            );
-
+            GaussianBlur(image, blurred, Size(5, 5), 0);  // gaussian blur with a 5x5 filter
+            imwrite(outputPath + "/" + fileName + "_blur.png", blurred);
+            
             // 7 crop image and resize back
-            {
-                int left = static_cast<int>(image.cols * 0.1);
-                int top = static_cast<int>(image.rows * 0.1);
-                int width = static_cast<int>(image.cols * 0.8);
-                int height = static_cast<int>(image.rows * 0.8);
-
-                Rect cropArea(left, top, width, height);
-                Mat cropped = image(cropArea);
-
-                Mat croppedResized;
-                resize(cropped, croppedResized, image.size());
-
-                imwrite(
-                    outputPath + "/" + fileName + "_crop.png",
-                    croppedResized
-                );
-            }
-
+            int left = image.cols * 0.1;  // 10% from the left
+            int top = image.rows * 0.1;  // 10% from the top
+            int width = image.cols * 0.8;  // keep 80% of the width
+            int height = image.rows * 0.8;  // keep 80% of the height
+            
+            Rect cropArea(left, top, width, height);
+            Mat cropped = image(cropArea);
+            
+            Mat croppedResized;
+            resize(cropped, croppedResized, image.size());
+            imwrite(outputPath + "/" + fileName + "_crop.png", croppedResized);
             cout << "Done: " << fileName << endl;
         }
     }
