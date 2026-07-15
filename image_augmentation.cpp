@@ -1,0 +1,110 @@
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <filesystem>
+
+using namespace std;
+using namespace cv;
+namespace fs = std::filesystem;
+
+
+// this function removes fully black borders from images
+Mat removeBlackBorder(Mat image) {
+    Mat blackMask;
+    Mat nonBlackMask;
+
+    // detect fully black pixels = blackMask
+    inRange(image, Scalar(0, 0, 0), Scalar(0, 0, 0), blackMask);
+
+    // everything not black sved in nonBlackMask (inverted black mask)
+    bitwise_not(blackMask, nonBlackMask); 
+
+    // find all pixel positions that are not black
+    vector<Point> points;
+    findNonZero(nonBlackMask, points);
+
+    // create smallest rectangle that contains all non black pixels = image without borders
+    Rect box = boundingRect(points);  
+
+    // cut out this box from original image and return that
+    Mat cropped = image(box).clone(); 
+    return cropped;
+}
+
+
+int main() {
+    string inputFolder = "CV Final Project";
+    string outputFolder = "CV Final Project/augmented";
+
+    string folders[] = {"Bare soil", "Stones", "Vegetation"};
+
+    for (string folderName : folders) {
+        string inputPath = inputFolder + "/" + folderName;
+        string outputPath = outputFolder + "/" + folderName;
+
+        // create output folder
+        fs::create_directories(outputPath);
+
+        // iterate over every file in current folder (bare soil / stones / vegetation)
+        for (auto file : fs::directory_iterator(inputPath)) {
+            string filePath = file.path().string();
+            string fileName = file.path().stem().string();  // filename without file extension as string
+
+            Mat image = imread(filePath);
+
+            if (image.empty()) {
+                cout << "Can not read: " << filePath << endl;
+                continue;
+            }
+
+            image = removeBlackBorder(image);  // remove black borders before processing
+
+            // 1 save original image
+            imwrite(outputPath + "/" + fileName + "_original.png", image);
+
+            // 2 flip image
+            Mat flipped;
+            flip(image, flipped, 1);  // 1 for horizontal flip (0 = vertical, -1 both)
+            imwrite(outputPath + "/" + fileName + "_flip.png", flipped);
+
+            // 3 rotate image
+            Mat rotated;
+            Point2f center(image.cols / 2.0, image.rows / 2.0);  // calculate center, the image should rotate around
+            Mat rotationMatrix = getRotationMatrix2D(center, 15, 1.0);  // create rotation matrix that rotates by 15 degrees with scale = 1
+            warpAffine(image, rotated, rotationMatrix, image.size(), INTER_LINEAR, BORDER_REFLECT_101);  // apply rotation; INTER_LINEAR = normal interpolation, BORDER_REFLECT_101 = missing areas are filld by mirroring the image to avoid black borders
+            imwrite(outputPath + "/" + fileName + "_rotate.png", rotated);
+
+            // 4 brighter image
+            Mat brighter;
+            image.convertTo(brighter, -1, 1.0, 40);  // contrast stays the same (1.0), brightness increased by 40
+            imwrite(outputPath + "/" + fileName + "_bright.png", brighter);
+
+            // 5 more contrast
+            Mat contrast;
+            image.convertTo(contrast, -1, 1.4, 0);  // contrast increased (1.4), brightness stays the same (0)
+            imwrite(outputPath + "/" + fileName + "_contrast.png", contrast);
+
+            // 6 blur image
+            Mat blurred;
+            GaussianBlur(image, blurred, Size(5, 5), 0);  // gaussian blurr applied, filter size 5x5 pixels
+            imwrite(outputPath + "/" + fileName + "_blur.png", blurred);
+
+            // 7 crop image and resize back
+            int left = image.cols * 0.1;  // 10% from the left
+            int top = image.rows * 0.1;  // 10% from the top
+            int right = image.cols * 0.8;  // 10% from the right
+            int bottom = image.rows * 0.8;  // 10% from the bottom
+
+            Rect cropArea(left, top, right, bottom);  // crop area
+            Mat cropped = image(cropArea);  // do crop
+
+            Mat croppedResized;
+            resize(cropped, croppedResized, image.size());  // resize cropped image to original size
+            imwrite(outputPath + "/" + fileName + "_crop.png", croppedResized);
+
+            cout << "Done: " << fileName << endl;
+        }
+    }
+
+    cout << "Everything augmented" << endl;
+    return 0;
+}
