@@ -33,7 +33,7 @@ Mat removeBlackBorder(Mat image) {
 
 int main() {
     string inputFolder = "CV Final Project";
-    string outputFolder = "CV Final Project/augmented_babak";
+    string outputFolder = "CV Final Project/augmented_adapted";
 
     string folders[] = {"Bare soil", "Stones", "Vegetation"};
 
