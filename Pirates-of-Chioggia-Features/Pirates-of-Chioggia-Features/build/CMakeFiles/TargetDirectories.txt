@@ -1,0 +1,3 @@
+/mnt/Documents/behkbab10895/Pirates-of-Chioggia/build/CMakeFiles/featExtractor.dir
+/mnt/Documents/behkbab10895/Pirates-of-Chioggia/build/CMakeFiles/edit_cache.dir
+/mnt/Documents/behkbab10895/Pirates-of-Chioggia/build/CMakeFiles/rebuild_cache.dir
